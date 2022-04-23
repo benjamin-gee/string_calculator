@@ -77,6 +77,7 @@ class StringCalculator():
 
     def _add_recursively(self, numbers: str) -> None:
         next_group = self._next_group(numbers)
+        next_group_len = len(next_group)
 
         if not next_group:
             pass
@@ -84,13 +85,13 @@ class StringCalculator():
             self._add_recursively(numbers[2:])
         elif self._is_negative_val(next_group):
             self._negative_values.append(int(next_group))
-            self._add_recursively(numbers[2:])
+            self._add_recursively(numbers[next_group_len:])
         elif next_group.isdigit():
             if int(next_group) <= 1000:
                 self._total += int(next_group)
-            self._add_recursively(numbers[1:])
+            self._add_recursively(numbers[next_group_len:])
         else:
-            self._add_recursively(numbers[len(next_group):])
+            self._add_recursively(numbers[next_group_len:])
 
     def _is_negative_val(self, next_group: str) -> bool:
         is_negative = False
@@ -102,11 +103,11 @@ class StringCalculator():
         next_group = ""
         if numbers:
             if numbers[0].isdigit():
-                next_group = numbers[0]
+                next_group = self._get_next_num(numbers)
             elif numbers[0] == "-":
                 if not numbers[1].isdigit():
                     raise InvalidString()
-                next_group = numbers[0:2]
+                next_group = "-" + self._get_next_num(numbers[1:])
             elif '\n' in numbers[:2]:
                 next_group = numbers[:2]
             else:
@@ -118,6 +119,15 @@ class StringCalculator():
                     raise InvalidString()
 
         return next_group
+
+    def _get_next_num(self, numbers:str) -> str:
+        multi_digit_value = ""
+        for num in numbers:
+            if not num.isdigit():
+                break
+            multi_digit_value += num
+
+        return multi_digit_value
 
 class StringCalculatorUnitTests(unittest.TestCase):
     def setUp(self):
@@ -136,6 +146,10 @@ class StringCalculatorUnitTests(unittest.TestCase):
         test_string = "1,2,5"
         self.assertEqual(self.calculator.add(test_string), 8)
 
+    def test_sum_multiple_digit_values(self):
+        test_string = "1,22,555"
+        self.assertEqual(self.calculator.add(test_string), 578)
+
     def test_empty_input_returns_int_type(self):
         test_string = ""
         self.assertIsInstance(self.calculator.add(test_string), int)
@@ -152,6 +166,10 @@ class StringCalculatorUnitTests(unittest.TestCase):
         test_string = "1\n,2\n,3"
         self.assertEqual(self.calculator.add(test_string), 6)
 
+    def test_new_lines_are_ignored_with_multiple_digit_values(self):
+        test_string = "1\n,20\n,300"
+        self.assertEqual(self.calculator.add(test_string), 321)
+
     def test_invalid_control_code(self):
         test_string = "/1,2,3"
         self.assertRaises(InvalidControlCode, self.control_info.extract_delimiter, test_string)
@@ -167,6 +185,12 @@ class StringCalculatorUnitTests(unittest.TestCase):
         self.assertEqual(self.control_info.delimiters, ["@#"])
         self.assertEqual(self.calculator.add(test_string), 6)
 
+    def test_two_character_delimiter_with_multiple_digit_values(self):
+        test_string = "//@#1@#20@#300"
+        self.control_info.extract_delimiter(test_string)
+        self.assertEqual(self.control_info.delimiters, ["@#"])
+        self.assertEqual(self.calculator.add(test_string), 321)
+
     def test_three_character_control_code(self):
         test_string = "//@1@2@3"
         self.control_info.extract_delimiter(test_string)
@@ -179,12 +203,23 @@ class StringCalculatorUnitTests(unittest.TestCase):
         self.assertEqual(self.control_info.control_code_length, 5)
         self.assertEqual(self.calculator.add(test_string), 6)
 
+    def test_values_over_1000_not_added(self):
+        test_string = "2,1001"
+        self.assertEqual(self.calculator.add(test_string), 2)
+
     def test_two_delimiters(self):
         test_string = "//$,@\n1$2@3"
         self.control_info.extract_delimiter(test_string)
         self.assertEqual(self.control_info.delimiters, ["$", "@"])
         self.assertEqual(self.control_info.control_code_length, 6)
         self.assertEqual(self.calculator.add(test_string), 6)
+
+    def test_two_delimiters_with_value_over_1000(self):
+        test_string = "//$,@\n1001$2@3"
+        self.control_info.extract_delimiter(test_string)
+        self.assertEqual(self.control_info.delimiters, ["$", "@"])
+        self.assertEqual(self.control_info.control_code_length, 6)
+        self.assertEqual(self.calculator.add(test_string), 5)
 
     def test_three_delimiters(self):
         test_string = "//$,@,##\n1$2@3\n$4##5"
@@ -198,7 +233,11 @@ class StringCalculatorUnitTests(unittest.TestCase):
         self.assertRaises(NegativeValueException, self.calculator.add, test_string)
 
     def test_positive_and_negative_values_throw_exception(self):
-        test_string = "1,-2,3"
+        test_string = "1,-20,3"
+        self.assertRaises(NegativeValueException, self.calculator.add, test_string)
+
+    def test_three_delimiters_with_negative_values(self):
+        test_string = "//$,@,##\n1$-2@3\n$4##-50"
         self.assertRaises(NegativeValueException, self.calculator.add, test_string)
 
 if __name__ == '__main__':
