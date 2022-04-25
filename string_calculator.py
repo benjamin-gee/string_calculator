@@ -88,6 +88,7 @@ class StringCalculator():
         is_negative = False
         if next_group[0] == '-' and next_group[1].isdigit():
             is_negative = True
+
         return is_negative
 
     def _get_next_delimiter_or_number(self, numbers: str) -> str:
