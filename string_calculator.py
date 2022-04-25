@@ -8,15 +8,6 @@ class NegativeValueException(Exception):
         print(f"Negative values provided: {str(negative_values)[1:-1]}")
         super().__init__()
 
-class InvalidControlCode(Exception):
-    pass
-
-class InvalidDelimiter(Exception):
-    pass
-
-class InvalidString(Exception):
-    pass
-
 class ControlInfo():
     def __init__(self):
         self._delimiters = []
@@ -37,7 +28,7 @@ class ControlInfo():
         if numbers[0].isdigit() or numbers[0] == "-":
             self._delimiters.append(DEFAULT_DELIMITER)
         elif numbers[0] != "/" or numbers[1] != "/":
-            raise InvalidControlCode()
+            raise Exception("Invalid Control Code")
         else:
             delimiter = ""
             self._control_code_length += 2
@@ -106,7 +97,7 @@ class StringCalculator():
                 next_group = self._get_next_num(numbers)
             elif numbers[0] == "-":
                 if not numbers[1].isdigit():
-                    raise InvalidString()
+                    raise Exception("Invalid String Provided")
                 next_group = "-" + self._get_next_num(numbers[1:])
             elif '\n' in numbers[:2]:
                 next_group = numbers[:2]
@@ -116,7 +107,7 @@ class StringCalculator():
                         next_group = delimiter
                         break
                 if not next_group:
-                    raise InvalidString()
+                    raise Exception("Invalid String Provided")
 
         return next_group
 
@@ -172,7 +163,7 @@ class StringCalculatorUnitTests(unittest.TestCase):
 
     def test_invalid_control_code(self):
         test_string = "/1,2,3"
-        self.assertRaises(InvalidControlCode, self.control_info.extract_delimiter, test_string)
+        self.assertRaises(Exception, self.control_info.extract_delimiter, test_string)
 
     def test_one_character_delimiter(self):
         test_string = "//@1@2@3"
