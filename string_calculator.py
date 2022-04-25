@@ -67,14 +67,14 @@ class StringCalculator():
         return self._total
 
     def _add_recursively(self, numbers: str) -> None:
-        next_group = self._next_group(numbers)
+        next_group = self._get_next_delimiter_or_number(numbers)
         next_group_len = len(next_group)
 
         if not next_group:
             pass
         elif '\n' == next_group:
             self._add_recursively(numbers[2:])
-        elif self._is_negative_val(next_group):
+        elif self._is_negative_number(next_group):
             self._negative_values.append(int(next_group))
             self._add_recursively(numbers[next_group_len:])
         elif next_group.isdigit():
@@ -84,21 +84,21 @@ class StringCalculator():
         else:
             self._add_recursively(numbers[next_group_len:])
 
-    def _is_negative_val(self, next_group: str) -> bool:
+    def _is_negative_number(self, next_group: str) -> bool:
         is_negative = False
         if next_group[0] == '-' and next_group[1].isdigit():
             is_negative = True
         return is_negative
 
-    def _next_group(self, numbers: str) -> str:
+    def _get_next_delimiter_or_number(self, numbers: str) -> str:
         next_group = ""
         if numbers:
             if numbers[0].isdigit():
-                next_group = self._get_next_num(numbers)
+                next_group = self._get_next_number_from_string(numbers)
             elif numbers[0] == "-":
                 if not numbers[1].isdigit():
                     raise Exception("Invalid String Provided")
-                next_group = "-" + self._get_next_num(numbers[1:])
+                next_group = "-" + self._get_next_number_from_string(numbers[1:])
             elif '\n' in numbers[:2]:
                 next_group = numbers[:2]
             else:
@@ -111,7 +111,7 @@ class StringCalculator():
 
         return next_group
 
-    def _get_next_num(self, numbers:str) -> str:
+    def _get_next_number_from_string(self, numbers:str) -> str:
         multi_digit_value = ""
         for num in numbers:
             if not num.isdigit():
